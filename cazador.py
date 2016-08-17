@@ -52,7 +52,7 @@ def get_service(fs_type, init_args):
     for srv in knownServices:
         if srv.get_service_type().lower() == fs_type.lower():
             try:
-                res = srv(init_args)
+                res = srv(init_args, logging)
             except Exception as ex:
                 logger.error("Failed to create service instance: {}".format(ex))
                 raise
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     try:
         opts, args = getopt.getopt(argv,
-                                   "hc:",
+                                   "hc:s:",
                                    ["config="])
     except getopt.GetoptError:
         print_help()
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     service = get_service(service_type, _config[service_type])
 
     # TODO - Remove this test code !!!!
-    f = "Krevshare_Myastan.txt"
+    f = "Nate.png"
     # Try name
     try:
         res = service.find_file(name=f)

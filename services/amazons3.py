@@ -1,4 +1,4 @@
-"""File service implementation for Amazon cloud services.
+"""File service implementation for the Amazon S3 cloud service.
 
 Created: 08/11/2016
 Creator: Nathan Palmer
@@ -8,30 +8,26 @@ from fileservice import fileServiceInterface
 import boto3
 
 
-class amazonHandler(fileServiceInterface):
+class amazonS3Handler(fileServiceInterface):
     """Amazon cloud service handler."""
 
-    def __init__(self, config_fields):
+    def __init__(self, config_fields, logging):
         """
-        Initialize the Amazon handler using configuration dictionary fields.
+        Initialize the Amazon S3 handler using configuration dictionary fields.
 
         Args:
             config_fields (dict): String dictionary from the configuration segment
+            logging        (log): Standard python logging interface
 
         Configuration Fields:
-            resource_type (str): s3, ec2, or glacier
-            access_key_id (str): Amazon repository access key id
-            secret_key (str): Amazone repository secret key for authentication
+            access_key_id (str): Repository access key id
+            secret_key (str): Repository secret key for authentication
         """
-        if "resource_type" not in config_fields:
-            res_type = "s3"
-        else:
-            res_type = config_fields["resource_type"]
-
-        self.client = boto3.client(res_type,
+        self.client = boto3.client("s3",
                                    region_name=config_fields["region"],
                                    aws_access_key_id=config_fields["access_key_id"],
                                    aws_secret_access_key=config_fields["secret_key"])
+        self.logging = logging
 
         self.buckets = []
         raw_buckets = config_fields["buckets"].split(';')
@@ -43,7 +39,7 @@ class amazonHandler(fileServiceInterface):
     @staticmethod
     def get_service_type():
         """Return the type of file service (Amazon)."""
-        return "Amazon"
+        return "AmazonS3"
 
     def _find_object_by_etag(self, bucket, tag=None, alt_tag=None, find_one=False):
         """Crawl the contents of a bucket to find the object with a specific tag."""
@@ -101,4 +97,4 @@ class amazonHandler(fileServiceInterface):
 
 
 # Register our handler
-fileServiceInterface.register(amazonHandler)
+fileServiceInterface.register(amazonS3Handler)

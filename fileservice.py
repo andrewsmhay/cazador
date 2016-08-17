@@ -12,7 +12,12 @@ from abc import ABCMeta, abstractmethod
 
 
 class fileServiceInterface(metaclass=ABCMeta):
-    """External File Service Interface."""
+    """External File Service Interface.
+
+    Initializers for derived classes are required to accept the following arguments:
+        config_fields (dict): Configuration dictionary loaded from file.
+        logging        (log): Standard python logging interface
+    """
 
     @staticmethod
     @abstractmethod
