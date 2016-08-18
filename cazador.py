@@ -5,6 +5,8 @@ Cazador is an open source and freely available tool that allows users to quickly
 if sensitive files are located within cloud environments.
 """
 
+import bottle
+from threading import Thread, Event
 import os
 import sys
 import logging
@@ -52,7 +54,7 @@ def get_service(fs_type, init_args):
     for srv in knownServices:
         if srv.get_service_type().lower() == fs_type.lower():
             try:
-                res = srv(init_args, logging)
+                res = srv(init_args)
             except Exception as ex:
                 logger.error("Failed to create service instance: {}".format(ex))
                 raise
@@ -120,7 +122,15 @@ if __name__ == "__main__":
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
-    # Try MD5
+    f = "AWS_Serverless"
+    # Try name
+    try:
+        res = service.find_file(name=f)
+        print(res)
+    except Exception as ex:
+        logger.error("Unexpected error finding file {}: {}".format(f, ex))
+
+    """# Try MD5
     f = "cfb19046b0d9b49e16918d0e2f7fce77"
     try:
         res = service.find_file(md5=f)
@@ -128,10 +138,13 @@ if __name__ == "__main__":
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
+
     # Try a sha1
-    f = "FF4B54F2903E3150BC3758F2FB83D153901D89B5"
+    # f = "FF4B54F2903E3150BC3758F2FB83D153901D89B5"
+    f = "5c279fb05a2bd6d4886844c05b214fc88f71abd4"
     try:
         res = service.find_file(sha1=f)
         print(res)
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
+    """

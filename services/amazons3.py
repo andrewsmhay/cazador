@@ -6,18 +6,19 @@ Creator: Nathan Palmer
 
 from fileservice import fileServiceInterface
 import boto3
+import logging
+logger = logging.getLogger(__name__)
 
 
 class amazonS3Handler(fileServiceInterface):
     """Amazon cloud service handler."""
 
-    def __init__(self, config_fields, logging):
+    def __init__(self, config_fields):
         """
         Initialize the Amazon S3 handler using configuration dictionary fields.
 
         Args:
             config_fields (dict): String dictionary from the configuration segment
-            logging        (log): Standard python logging interface
 
         Configuration Fields:
             access_key_id (str): Repository access key id
@@ -27,7 +28,6 @@ class amazonS3Handler(fileServiceInterface):
                                    region_name=config_fields["region"],
                                    aws_access_key_id=config_fields["access_key_id"],
                                    aws_secret_access_key=config_fields["secret_key"])
-        self.logging = logging
 
         self.buckets = []
         raw_buckets = config_fields["buckets"].split(';')
