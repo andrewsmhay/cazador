@@ -115,15 +115,11 @@ class boxHandler(fileServiceInterface):
         """Find one or more files using the name and/or hash in Box."""
         matches = []
 
-        if not name and not sha1 and md5:
-            logger.error("Box does not support MD5 hash searching.")
+        if not name and (sha1 or md5):
+            logger.error("Box does not support SHA1 or MD5 hash searching.")
             return matches
 
-        queries = []
-        if name:
-            queries.append(name)
-        if sha1:
-            queries.append("sha1={}".format(sha1))
+        queries = [name]  # Making this a list in the hopes of future support
 
         for f in self.folders:
             # There doesn't seem to be support for chaining...

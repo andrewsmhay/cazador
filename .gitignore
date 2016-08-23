@@ -1,3 +1,4 @@
 dg_cloud.conf
 *.pyc
 *.log
+*.dat

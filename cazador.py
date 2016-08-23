@@ -5,8 +5,6 @@ Cazador is an open source and freely available tool that allows users to quickly
 if sensitive files are located within cloud environments.
 """
 
-import bottle
-from threading import Thread, Event
 import os
 import sys
 import logging
@@ -88,7 +86,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(argv,
                                    "hc:s:",
-                                   ["config="])
+                                   ["config=", "service="])
     except getopt.GetoptError:
         print_help()
         sys.exit(2)
@@ -114,7 +112,7 @@ if __name__ == "__main__":
     service = get_service(service_type, _config[service_type])
 
     # TODO - Remove this test code !!!!
-    f = "Nate.png"
+    f = "nate.png"
     # Try name
     try:
         res = service.find_file(name=f)
@@ -130,7 +128,7 @@ if __name__ == "__main__":
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
-    """# Try MD5
+    # Try MD5
     f = "cfb19046b0d9b49e16918d0e2f7fce77"
     try:
         res = service.find_file(md5=f)
@@ -138,7 +136,7 @@ if __name__ == "__main__":
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
-
+    """
     # Try a sha1
     # f = "FF4B54F2903E3150BC3758F2FB83D153901D89B5"
     f = "5c279fb05a2bd6d4886844c05b214fc88f71abd4"
