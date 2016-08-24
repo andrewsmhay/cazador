@@ -5,6 +5,7 @@ Creator: Nathan Palmer
 """
 
 from fileservice import fileServiceInterface
+from cazobjects import CazFile
 import logging
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class googledriveHandler(fileServiceInterface):
     """Google Drive cloud service handler."""
 
     SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
-    CLIENT_SECRET_FILE = 'client_secret.json'
+    FOLDER_MIME = "application/vnd.google-apps.folder"
 
     class oauth_flags(object):
         def __init__(self):
@@ -66,50 +67,32 @@ class googledriveHandler(fileServiceInterface):
         http = credentials.authorize(http)
         self.client = discovery.build('drive', 'v3', http=http)
 
-        self.folders = []
-        try:
-            raw = config_fields["folders"].split(';')
-            for b in raw:
-                if b:
-                    # Only add buckets that are not null or empty strings
-                    if b == '/':
-                        self.folders.append('')
-                    else:
-                        self.folders.append(b)
-        except:
-            self.folders.append('')
-
     @staticmethod
     def get_service_type():
         """Return the type of file service (Google Drive)."""
         return "GoogleDrive"
 
-    def find_file(self, name=None, md5=None, sha1=None):
-        """Find one or more files using the name and/or hash in Google Drive."""
-        matches = []
+    def convert_file(self, item):
+        """Convert the file details into a CazFile."""
+        return CazFile(item.get('id', None),
+                       item.get('name', None),
+                       item.get('parents', None),
+                       md5=item.get('md5Checksum', None))
 
-        if not name and (sha1 or md5):
-            logger.error("Google Drive does not support SHA1 or MD5 hash searching.")
-            return matches
-
+    def _run_file_search_query(self,
+                               query,
+                               item_check,
+                               fields="nextPageToken, files(id, name, kind, mimeType, md5Checksum, parents)"):
+        nextPage = ""
         try:
-            # results = self.client.files().list(
-            #    pageSize=100, fields="nextPageToken, files(id, name)").execute()
             nextPage = ""
-            query = ""
-            if name:
-                query += " name contains '{}'".format(name)
-
-            """
-            if md5:
-                if query:
-                    query + " or "
-                query += " md5Checksum contains '{}'".format(md5)
-            """
 
             while nextPage is not None:
-                results = self.client.files().list(
-                    pageSize=100, q=query).execute()
+                results = self.client.files().list(pageSize=1000,
+                                                   q=query,
+                                                   fields=fields,
+                                                   pageToken=nextPage,
+                                                   spaces="drive").execute()
                 items = results.get('files', [])
                 try:
                     nextPage = results.get('nextPageToken', None)
@@ -117,20 +100,67 @@ class googledriveHandler(fileServiceInterface):
                     nextPage = None
 
                 if not items:
-                    logger.info('No files found.')
+                    logger.debug('No files found.')
                 else:
-                    logger.info('Files:')
+                    logger.debug('{} Files found.'.format(len(items)))
                     for item in items:
-                        logger.info('{0} ({1})'.format(item['name'], item['id']))
-                        matches.append(item)
+                        item_check(item)
 
-            for f in self.folders:
-                pass
         except AccessTokenRefreshError:
             # The AccessTokenRefreshError exception is raised if the credentials
             # have been revoked by the user or they have expired.
             logger.error('Unable to execute command. The access tokens have been'
                          ' revoked by the user or have expired.')
+
+    def _find_by_md5(self, md5):
+        """Crawl the contents of the repository to find the object based on the tags.
+
+        This operation walks through the entire heirarchy and may be expensive and
+        time consuming based on the size and depth of the repository. This type of
+        operation is a last ditch effort due to limited support for direct hash
+        searching.
+        """
+        if not md5:
+            raise ValueError("No valid search hash specified.")
+
+        matches = []
+
+        def md5_item_check(item):
+            check = item.get('md5Checksum', None)
+            if check == md5:
+                matches.append(self.convert_file(item))
+
+        self._run_file_search_query("", md5_item_check)
+        return matches
+
+    def find_file(self, name=None, md5=None, sha1=None):
+        """Find one or more files using the name and/or hash in Google Drive."""
+        matches = []
+
+        if not name and not md5 and sha1:
+            logger.error("Google Drive does not support SHA1 hash searching.")
+            return matches
+
+        if md5:
+            logger.warn("Google Drive does not officially support MD5 searching."
+                        " This operation will walk your entire heirarchy comparing"
+                        " file metadata.")
+
+        def std_item_check(item):
+            matches.append(self.convert_file(item))
+
+        try:
+            if name:
+                self._run_file_search_query("name contains '{}'".format(name),
+                                            std_item_check)
+        except AccessTokenRefreshError:
+            # The AccessTokenRefreshError exception is raised if the credentials
+            # have been revoked by the user or they have expired.
+            logger.error('Unable to execute command. The access tokens have been'
+                         ' revoked by the user or have expired.')
+
+        if md5:
+            matches.extend(self._find_by_md5(md5))
 
         return matches
 

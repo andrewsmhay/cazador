@@ -1,4 +1,5 @@
 dg_cloud.conf
 *.pyc
-*.log
+*.log.[0-9]*
+*.log*
 *.dat

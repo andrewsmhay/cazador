@@ -3,6 +3,9 @@ Cazador file/cloud service investigator.
 
 Cazador is an open source and freely available tool that allows users to quickly determine
 if sensitive files are located within cloud environments.
+
+Created: 08/11/2016
+Creator: Nathan Palmer
 """
 
 import os
@@ -116,7 +119,8 @@ if __name__ == "__main__":
     # Try name
     try:
         res = service.find_file(name=f)
-        print(res)
+        for x in res:
+            print(x)
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
@@ -124,7 +128,8 @@ if __name__ == "__main__":
     # Try name
     try:
         res = service.find_file(name=f)
-        print(res)
+        for x in res:
+            print(x)
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
@@ -132,7 +137,8 @@ if __name__ == "__main__":
     f = "cfb19046b0d9b49e16918d0e2f7fce77"
     try:
         res = service.find_file(md5=f)
-        print(res)
+        for x in res:
+            print(x)
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 

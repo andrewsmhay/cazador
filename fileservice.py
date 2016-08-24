@@ -3,6 +3,9 @@ Core module for External File Service Interface.
 
 This module defines the base External File Service Interface used by data/file
 providers such as Amazon S3, Microsoft Azure, Google Drive, etc. access modules.
+
+Created: 08/11/2016
+Creator: Nathan Palmer
 """
 
 import os
@@ -24,6 +27,35 @@ class fileServiceInterface(metaclass=ABCMeta):
     def get_service_type():
         """Return a string id for the file service type handled."""
         raise NotImplementedError
+
+    @abstractmethod
+    def convert_file(self, item):
+        """
+        Convert from service specfic file format to cazobject file format.
+
+        Args:
+            item (object): Service specific representation of a file.
+
+        Returns:
+            cazobject.CazFile
+        """
+        raise NotImplementedError
+
+    def convert_files(self, items):
+        """
+        Convert a list of service specfic file entries to cazobject entries.
+
+        Args:
+            items (object[]): Service specific representation of a list of files.
+
+        Returns:
+            List of cazobject.CazFile entries
+        """
+        results = []
+        for i in items:
+            results.append(self.convert_file(i))
+
+        return results
 
     @abstractmethod
     def find_file(self, name=None, md5=None, sha1=None):
