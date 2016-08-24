@@ -75,7 +75,7 @@ class fileServiceInterface(metaclass=ABCMeta):
             sha1 (string): SHA1 hash of the file to find.
 
         Returns:
-            List of file identifiers matching the request parameters.
+            List of CazFile objects matching the request parameters.
         """
         raise NotImplementedError
 
