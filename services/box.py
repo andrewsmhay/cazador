@@ -5,6 +5,7 @@ Creator: Nathan Palmer
 """
 
 from fileservice import fileServiceInterface
+from cazobjects import CazFile
 from boxsdk import OAuth2
 import boxsdk
 import logging
@@ -111,6 +112,14 @@ class boxHandler(fileServiceInterface):
         """Return the type of file service (Box)."""
         return "Box"
 
+    def convert_file(self, item):
+        """Convert the file details into a CazFile."""
+        return CazFile(item.id,
+                       item.name,
+                       item.parent,
+                       sha1=item.sha1,
+                       path=item.caz_path)
+
     def find_file(self, name=None, md5=None, sha1=None):
         """Find one or more files using the name and/or hash in Box."""
         matches = []
@@ -140,8 +149,8 @@ class boxHandler(fileServiceInterface):
                     m_path = ""
                     for x in m.path_collection["entries"]:
                         m_path += "{}/".format(x["name"])
-                    # pprint.pprint("{}{}".format(m_path, m.name))
-                    matches.append(m)
+                    m.caz_path = m_path
+                    matches.append(self.convert_file(m))
 
         return matches
 

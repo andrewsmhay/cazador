@@ -9,6 +9,7 @@ Creator: Nathan Palmer
 """
 
 from fileservice import fileServiceInterface
+from cazobjects import CazFile
 import dropbox
 import logging
 
@@ -48,6 +49,14 @@ class dropboxHandler(fileServiceInterface):
         """Return the type of file service (Dropbox)."""
         return "Dropbox"
 
+    def convert_file(self, item):
+        """Convert the file details into a CazFile."""
+        md = item.metadata
+        return CazFile(md.id,
+                       md.name,
+                       md.parent_shared_folder_id,
+                       path=md.path_display)
+
     def find_file(self, name=None, md5=None, sha1=None):
         """Find one or more files using the name and/or hash in Dropbox."""
         if not name and (md5 or sha1):
@@ -63,7 +72,7 @@ class dropboxHandler(fileServiceInterface):
                 if len(res.matches):
                     # matches were found
                     for m in res.matches:
-                        matches.append(m)
+                        matches.append(self.convert_file(m))
                 if res.more:
                     start = res.start
                 else:

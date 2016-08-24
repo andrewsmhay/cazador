@@ -5,6 +5,7 @@ Creator: Nathan Palmer
 """
 
 from fileservice import fileServiceInterface
+from cazobjects import CazFile
 import boto3
 import logging
 logger = logging.getLogger(__name__)
@@ -41,6 +42,14 @@ class amazonS3Handler(fileServiceInterface):
         """Return the type of file service (Amazon)."""
         return "AmazonS3"
 
+    def convert_file(self, item):
+        """Convert the file details into a CazFile."""
+        return CazFile(None,
+                       item['Key'],
+                       None,
+                       md5=item['ETag'],
+                       path=item['Key'])
+
     def _find_object_by_etag(self, bucket, tag=None, alt_tag=None, find_one=False):
         """Crawl the contents of a bucket to find the object with a specific tag."""
         if not tag and not alt_tag:
@@ -58,9 +67,9 @@ class amazonS3Handler(fileServiceInterface):
             for content in results['Contents']:
                 etag = content['ETag'].lower().replace('"', '')
                 if tag and etag == tag.lower():
-                    matches.append(content)
+                    matches.append(self.convert_file(content))
                 elif alt_tag and etag == alt_tag.lower():
-                    matches.append(content)
+                    matches.append(self.convert_file(content))
 
             if len(matches) > 0 and find_one:
                 # If there was a request to stop on the first discovery break out
@@ -80,14 +89,11 @@ class amazonS3Handler(fileServiceInterface):
             res = None
             if name:
                 res = self.client.get_object(Bucket=b, Key=name)
+                matches.append(self.convert_file(res))
 
             if not res and (md5 or sha1):
                 print("Checking for hash {} and {}".format(md5, sha1))
-                res = self._find_object_by_etag(b, tag=md5, alt_tag=sha1)
-
-            if res:
-                # Add the match to the list of matches
-                matches.append(res)
+                matches.extend(self._find_object_by_etag(b, tag=md5, alt_tag=sha1))
 
         return matches
 
