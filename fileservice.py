@@ -8,9 +8,6 @@ Created: 08/11/2016
 Creator: Nathan Palmer
 """
 
-import os
-import sys
-import logging
 from abc import ABCMeta, abstractmethod
 
 
