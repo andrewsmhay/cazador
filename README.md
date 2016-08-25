@@ -78,7 +78,7 @@ client_secret =
 ## Usage
 
 ```
-$ python cazador.py -c <Config file>
+$ python cazador.py -c <Config file> -s <Service Type>
 
     -s, --service= Cloud/File service type to search through.
                   !!! This must have a matching segment in the configuration document
@@ -92,7 +92,7 @@ Known services:
 ```
 
 ## Authors and Contributors
-* Nathan Palmer, DataGravity, Inc.
+* Nathan Palmer, DataGravity, Inc. <a href="https://twitter.com/napalmer7">@napalmer7</a>
 * Andrew Hay, DataGravity, Inc., <a href="https://twitter.com/andrewsmhay">@andrewsmhay</a>
 
 ## Support

@@ -75,7 +75,7 @@ def print_known_services():
 def print_help():
     """Print command line tool help."""
     print("""Cazador command line tool.
-cazador.py -c <Config file>
+cazador.py -c <Config file> -s <Service Type>
 
     -s, --service= Cloud/File service type to search through.
                   !!! This must have a matching segment in the configuration document
