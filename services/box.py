@@ -197,8 +197,8 @@ class boxHandler(fileServiceInterface):
         """Find one or more files using the name and/or hash in Box."""
         matches = []
 
-        if md5:
-            logger.error("Box does not support SHA1 or MD5 hash searching.")
+        if not name and not sha1 and md5:
+            logger.error("Box does not support MD5 hash searching.")
             return matches
 
         if not name and not sha1:
