@@ -142,13 +142,20 @@ if __name__ == "__main__":
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
-    """
     # Try a sha1
-    # f = "FF4B54F2903E3150BC3758F2FB83D153901D89B5"
+    f = "FF4B54F2903E3150BC3758F2FB83D153901D89B5"
+    try:
+        res = service.find_file(sha1=f)
+        for x in res:
+            print(x)
+    except Exception as ex:
+        logger.error("Unexpected error finding file {}: {}".format(f, ex))
+
+    # Try another sha1
     f = "5c279fb05a2bd6d4886844c05b214fc88f71abd4"
     try:
         res = service.find_file(sha1=f)
-        print(res)
+        for x in res:
+            print(x)
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
-    """
