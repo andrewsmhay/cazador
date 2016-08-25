@@ -3,12 +3,15 @@ Cazador (Spanish for 'Hunter') is an open source and freely available tool to al
 
 ## Supported Services
 
-| Service             | Search by *md5* | Search by *sha1* | Search by *filename* | 
+| Service             | Search by *md5* | Search by *sha1* | Search by *filename* |
 | ------------------- |:---------------:|:----------------:|:--------------------:|
-| **Amazon S3**       |               X |                X |                    X |
-| **Box**             |               X |                X |                    X |
-| **Dropbox**         |               X |                X |                    X |
-| **Google Drive**    |               X |                X |                    X |
+| **Amazon S3**       |               X^|                X^|                    X |
+| **Box**             |                 |                X |                    X |
+| **Dropbox**         |                 |                  |                    X |
+| **Google Drive**    |               X |                  |                    X |
+
+**^: Amazon S3 Hash searching will only detect files not uploaded using multipart uploads as multipart
+uploads generates an random value for the file parts and reconstructed file's Etag field.**
 
 ## Installation
 
@@ -69,7 +72,7 @@ local_auth_port = 8080
 
 [googledrive]
 client_id =
-client_secret = 
+client_secret =
 ```
 
 ## Usage
