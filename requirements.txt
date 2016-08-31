@@ -14,3 +14,4 @@ s3transfer==0.1.2
 six==1.10.0
 typing==3.5.2.2
 urllib3==1.16
+tika==1.13.1

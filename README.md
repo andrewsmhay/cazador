@@ -43,6 +43,7 @@ Several libraries are required for cazador to function properly. These libraries
 * six
 * typing
 * urllib3
+* tika
 
 Install the required helper libraries using `pip`
 
