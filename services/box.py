@@ -6,6 +6,8 @@ Creator: Nathan Palmer
 
 from fileservice import fileServiceInterface
 from cazobjects import CazFile
+from cazscan import search_content, create_temp_name
+import os
 from boxsdk import OAuth2
 import boxsdk
 import logging
@@ -13,7 +15,6 @@ import bottle
 from threading import Thread, Event
 import webbrowser
 from wsgiref.simple_server import WSGIServer, WSGIRequestHandler, make_server
-
 logger = logging.getLogger(__name__)
 
 
@@ -138,6 +139,67 @@ class boxHandler(fileServiceInterface):
             caz = None
         return caz
 
+    def _build_folder_list(self):
+        """Convert the folder names into a list of Box Folder objects."""
+        box_folders = []
+        for f in self.folders:
+            # Build a set of Box Folder entries for searching
+            if not f == '':
+                bfs = self.client.search(f, limit=1, offset=0, result_type="folder")
+
+                for x in bfs:
+                    box_folders.append(x)
+                    # break shouldn't be necessary... but why not
+                    break
+            else:
+                box_folders.append(self.client.folder('0'))
+        return box_folders
+
+    def _walk_directories_with_function(self, operation, folder_ids):
+        """Crawl the contents of the repository passing each result an operation.
+
+        This operation walks through the entire heirarchy and may be expensive and
+        time consuming based on the size and depth of the repository.
+        """
+        processed_fids = []
+
+        # api limit on results
+        limit = 1000
+        logger.debug("Processing {} initial folders".format(len(folder_ids)))
+        while folder_ids:
+            # Continue to walk through the folder ids until none are left
+            box_folder = folder_ids.pop(0)
+            fid = box_folder._object_id
+
+            if fid in processed_fids:
+                # Don't double work if we already processed the ID
+                logger.error("FID {} already processed".format(fid))
+                continue
+            # box_folder = self.client.folder(fid)
+            offset = 0
+
+            while True:
+                items = box_folder.get_items(limit, offset=offset)
+                logger.debug("Analyzing {} items in folder id {}. Total analyzed {}".format(len(items),
+                                                                                            fid,
+                                                                                            offset))
+                for x in items:
+                    if x.type == 'folder':
+                        if x.id not in processed_fids:
+                            folder_ids.append(x)
+                    elif x.type == 'file':
+                        operation(x)
+
+                if len(items) < limit:
+                    logger.debug("Finished folder {} processing".format(fid))
+                    # If we received a set smaller than the limit... we are done
+                    break
+                else:
+                    logger.debug("Retrieving more items from folder {}".format(fid))
+                    offset += limit
+
+            processed_fids.append(fid)
+
     def _find_by_sha1(self, sha1, folder_ids):
         """Crawl the contents of the repository to find the object based on SHA1.
 
@@ -153,43 +215,13 @@ class boxHandler(fileServiceInterface):
                     " This operation will walk your entire heirarchy comparing"
                     " file metadata.")
 
-        processed_fids = []
         matches = []
-        # api limit on results
-        limit = 1000
-        logger.debug("Processing {} initial folders".format(len(folder_ids)))
-        while folder_ids:
-            # Continue to walk through the folder ids until none are left
-            fid = folder_ids.pop(0)
 
-            if fid in processed_fids:
-                # Don't double work if we already processed the ID
-                logger.debug("FID {} already processed".format(fid))
-                continue
-            box_folder = self.client.folder(fid)
-            offset = 0
+        def check_file_sha1(box_obj):
+            if box_obj.sha1 == sha1:
+                matches.append(self.convert_file(box_obj))
 
-            while True:
-                items = box_folder.get_items(limit, offset=offset)
-                logger.debug("Analyzing {} items in folder id {}. Total analyzed {}".format(len(items),
-                                                                                            fid,
-                                                                                            offset))
-                for x in items:
-                    if x.type == 'folder':
-                        folder_ids.append(x.id)
-                    elif x.type == 'file':
-                        if x.sha1 == sha1:
-                            matches.append(self.convert_file(x))
-
-                if len(items) < limit:
-                    logger.debug("Finished folder {} processing".format(fid))
-                    # If we received a set smaller than the limit... we are done
-                    break
-                else:
-                    logger.debug("Retrieving more items from folder {}".format(fid))
-                    offset += limit
-
-            processed_fids.append(fid)
+        self._walk_directories_with_function(check_file_sha1, folder_ids)
 
         return matches
 
@@ -205,32 +237,17 @@ class boxHandler(fileServiceInterface):
             logger.error("No valid search criteria supplied.")
             return matches
 
-        sha1_fids = []
-        for f in self.folders:
-            # There doesn't seem to be support for chaining...
-            f_ids = None
-            if not f == '':
-                box_folder = self.client.search(f, limit=1, offset=0, result_type="folder")
-                try:
-                    logger.error(box_folder.__dict__)
-                except:
-                    pass
-                for x in box_folder:
-                    f_ids = [x]
-                    sha1_fids.append(x.id)
-                    # break shouldn't be necessary... but why not
-                    break
-            else:
-                sha1_fids.append(0)
+        box_folders = self._build_folder_list()
 
-            if name:
-                res = self.client.search(name, limit=200, offset=0, ancestor_folders=f_ids)
-                # matches were found
-                for m in res:
-                    matches.append(self.convert_file(m))
+        if name:
+            res = self.client.search(name, limit=200, offset=0, ancestor_folders=box_folders)
+            # matches were found
+            for m in res:
+                matches.append(self.convert_file(m))
 
-        if sha1 and sha1_fids:
-            matches.extend(self._find_by_sha1(sha1, sha1_fids))
+        if sha1:
+            # add any matches to the existing list
+            matches.extend(self._find_by_sha1(sha1, box_folders))
 
         return matches
 
@@ -241,7 +258,29 @@ class boxHandler(fileServiceInterface):
         Args:
             expressions (CazRegExp[]) List of regular expressions for content comparison
         """
-        raise NotImplementedError
+        matches = []
+
+        box_folders = self._build_folder_list()
+
+        def check_contents(box_obj):
+            f_path = create_temp_name(temp_dir, box_obj.name)
+            logger.debug("Processing file {}...{}".format(box_obj.name, f_path))
+            f = open(f_path, 'wb')
+            box_obj.download_to(f)
+            f.close()
+            try:
+                matches.extend(search_content(f_path, expressions))
+            except Exception as ex:
+                logger.error("Unable to parse content in file {}. {}".format(box_obj.name, ex))
+
+            try:
+                os.remove(f_path)
+            except Exception as ex:
+                logger.error("Unable to clean up temprary file {}. {}".format(f_path, ex))
+
+        self._walk_directories_with_function(check_contents, box_folders)
+
+        return matches
 
     def get_file(self, name=None, md5=None, sha1=None):
         """Get a file from Box using the name or hashes."""

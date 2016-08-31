@@ -10,6 +10,7 @@ Creator: Nathan Palmer
 
 import os
 import sys
+import traceback
 import logging
 from logging.config import fileConfig
 import getopt
@@ -30,6 +31,7 @@ for _, name, _ in pkgutil.iter_modules([os.path.dirname(services.__file__)]):
     try:
         importlib.import_module('services.' + name)
     except Exception as ex:
+        logger.error(traceback.format_exc())
         logger.error("Failed to import {}: {}".format(name, ex))
 
 from fileservice import fileServiceInterface
@@ -85,6 +87,7 @@ cazador.py -c <Config file> -s <Service Type>
 
 
 def test_find_file(service):
+    """Dev Test Method"""
     # TODO - Remove this test code !!!!
     f = "nate.png"
     # Try name
@@ -93,6 +96,7 @@ def test_find_file(service):
         for x in res:
             print(x)
     except Exception as ex:
+        logger.error(traceback.format_exc())
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
     f = "AWS_Serverless"
@@ -102,6 +106,7 @@ def test_find_file(service):
         for x in res:
             print(x)
     except Exception as ex:
+        logger.error(traceback.format_exc())
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
     # Try MD5
@@ -111,6 +116,7 @@ def test_find_file(service):
         for x in res:
             print(x)
     except Exception as ex:
+        logger.error(traceback.format_exc())
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
     # Try a sha1
@@ -120,6 +126,7 @@ def test_find_file(service):
         for x in res:
             print(x)
     except Exception as ex:
+        logger.error(traceback.format_exc())
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
     # Try another sha1
@@ -129,6 +136,7 @@ def test_find_file(service):
         for x in res:
             print(x)
     except Exception as ex:
+        logger.error(traceback.format_exc())
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
 
 
@@ -179,7 +187,7 @@ if __name__ == "__main__":
         temp_dir = os.path.dirname(__file__)
 
     # TODO REMOVE THIS TEST CODE
-    test_find = False
+    test_find = True
     if test_find:
         test_find_file(service)
         logger.info("")
@@ -194,6 +202,7 @@ if __name__ == "__main__":
                 logger.warn("{}: {}".format(count, x))
                 count += 1
         except Exception as ex:
+            logger.error(traceback.format_exc())
             logger.error("Unexpected error scanning file contents. {}".format(ex))
     else:
         logger.info("Bypassing content scan. Not requested.")

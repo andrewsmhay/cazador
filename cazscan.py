@@ -28,6 +28,10 @@ def search_content(file_path, expressions):
     count = 0
     data = parser.from_file(file_path)
     # Read into an I/O buffer for better readline support
+    if not data:
+        # There is no content that could be extracted
+        return matches
+
     content = io.StringIO(data['content'])
     # TODO this may create a very large buffer for larger files
     # We may need to convert this to a while readline() loop
