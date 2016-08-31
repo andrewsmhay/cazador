@@ -16,6 +16,7 @@ import getopt
 import pkgutil
 import importlib
 import configparser as ConfigParser
+from cazobjects import CazRegEx
 
 modulepath = os.path.realpath(os.path.dirname(__file__))
 fileConfig(os.path.join(modulepath, 'logging.conf'), disable_existing_loggers=False)
@@ -40,7 +41,6 @@ for srv in knownServices:
     logging.debug("Found service {} for {}".format(str(srv), srv.get_service_type()))
 
 
-# TODO - Check if we want explicit constructor args or keyword
 def get_service(fs_type, init_args):
     """
     Construct a file service object based on the type requested.
@@ -83,37 +83,8 @@ cazador.py -c <Config file> -s <Service Type>
                   Default: [Current Directory]/cloud.conf""")
     print_known_services()
 
-if __name__ == "__main__":
-    argv = sys.argv[1:]
 
-    try:
-        opts, args = getopt.getopt(argv,
-                                   "hc:s:",
-                                   ["config=", "service="])
-    except getopt.GetoptError:
-        print_help()
-        sys.exit(2)
-
-    config_path = "cloud.conf"
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print_help()
-            sys.exit()
-        elif opt in ("-s", "--service"):
-            service_type = arg
-        elif opt in ("-c", "--config"):
-            config_path = arg
-
-    if not service_type:
-        logger.error("Unable to complete operation. No valid service type was specified.")
-        print_help()
-        sys.exit(2)
-
-    _config.read(config_path)
-
-    # Create a service instance
-    service = get_service(service_type, _config[service_type])
-
+def test_find_file(service):
     # TODO - Remove this test code !!!!
     f = "nate.png"
     # Try name
@@ -159,3 +130,70 @@ if __name__ == "__main__":
             print(x)
     except Exception as ex:
         logger.error("Unexpected error finding file {}: {}".format(f, ex))
+
+
+if __name__ == "__main__":
+    argv = sys.argv[1:]
+
+    try:
+        opts, args = getopt.getopt(argv,
+                                   "hc:s:",
+                                   ["config=", "service="])
+    except getopt.GetoptError:
+        print_help()
+        sys.exit(2)
+
+    config_path = "cloud.conf"
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print_help()
+            sys.exit()
+        elif opt in ("-s", "--service"):
+            service_type = arg
+        elif opt in ("-c", "--config"):
+            config_path = arg
+
+    if not service_type:
+        logger.error("Unable to complete operation. No valid service type was specified.")
+        print_help()
+        sys.exit(2)
+
+    _config.read(config_path)
+
+    # Create a service instance
+    service = get_service(service_type, _config[service_type])
+
+    # Build a list of expression objects for performing content analysis
+    regex_exps = []
+    try:
+        cfg_reg = _config["regex"]
+        for x in cfg_reg:
+            regex_exps.append(CazRegEx(x, cfg_reg[x]))
+    except:
+        # Ignore exceptions reading the configuration... it can be empty
+        pass
+
+    try:
+        temp_dir = _config["scanner"]["temp_dir"]
+    except:
+        temp_dir = os.path.dirname(__file__)
+
+    # TODO REMOVE THIS TEST CODE
+    test_find = False
+    if test_find:
+        test_find_file(service)
+        logger.info("")
+
+    if len(regex_exps) > 0:
+        logger.debug("Starting scan...")
+        try:
+            res = service.scan_files(temp_dir, regex_exps)
+            logger.warn("{} scanned results found.".format(len(res)))
+            count = 0
+            for x in res:
+                logger.warn("{}: {}".format(count, x))
+                count += 1
+        except Exception as ex:
+            logger.error("Unexpected error scanning file contents. {}".format(ex))
+    else:
+        logger.info("Bypassing content scan. Not requested.")

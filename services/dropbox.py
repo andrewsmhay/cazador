@@ -80,6 +80,15 @@ class dropboxHandler(fileServiceInterface):
 
         return matches
 
+    def scan_files(self, temp_dir, expressions):
+        """
+        Scan all files for any content matches.
+
+        Args:
+            expressions (CazRegExp[]) List of regular expressions for content comparison
+        """
+        raise NotImplementedError
+
     def get_file(self, name=None, md5=None, sha1=None):
         """Get a file from Dropbox using the name or hashes."""
         raise NotImplementedError

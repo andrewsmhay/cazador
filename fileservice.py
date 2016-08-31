@@ -55,6 +55,17 @@ class fileServiceInterface(metaclass=ABCMeta):
         return results
 
     @abstractmethod
+    def scan_files(self, temp_dir, expressions):
+        """
+        Scan all files for any content matches.
+
+        Args:
+            temp_dir (str): Path to the temporary directory to hold files for comparison
+            expressions (CazRegExp[]): List of regular expressions for content comparison
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def find_file(self, name=None, md5=None, sha1=None):
         """
         Search for a file by name or hash.
