@@ -8,9 +8,12 @@ Created: 08/17/2016
 Creator: Nathan Palmer
 """
 
+import os
 from fileservice import fileServiceInterface
 from cazobjects import CazFile
+from cazscan import search_content, create_temp_name
 import dropbox
+from dropbox.files import FileMetadata
 import logging
 
 logger = logging.getLogger(__name__)
@@ -87,7 +90,43 @@ class dropboxHandler(fileServiceInterface):
         Args:
             expressions (CazRegExp[]) List of regular expressions for content comparison
         """
-        raise NotImplementedError
+        matches = []
+
+        for f in self.folders:
+            try:
+                res = self.client.files_list_folder(f, recursive=True)
+
+                while True:
+                    for x in res.entries:
+                        # DBX FileMetadata/FolderMetadata
+                        if isinstance(x, FileMetadata):
+                            f_path = create_temp_name(temp_dir, x.name)
+                            try:
+                                # If it's a file... download and process
+                                self.client.files_download_to_file(f_path, x.path_display)
+                                logger.debug("Processing file {}...{}".format(x.name, f_path))
+                                matches.extend(search_content(f_path, expressions))
+                            except Exception as ex:
+                                logger.error("Unable to parse contents in file {}. {}".format(x.name,
+                                                                                              ex))
+
+                            try:
+                                # Clean up the temporary file
+                                os.remove(f_path)
+                            except Exception as ex:
+                                logger.error("Unable to clean up temporary file {}. {}".format(f_path,
+                                                                                               ex))
+
+                    if not res.has_more:
+                        break
+                    else:
+                        # Get the next set
+                        res = self.client.files_list_folder_continue(res.cursor)
+
+            except Exception as ex:
+                logger.error("Unable to process folder {}. {}".format(f, ex))
+
+        return matches
 
     def get_file(self, name=None, md5=None, sha1=None):
         """Get a file from Dropbox using the name or hashes."""
