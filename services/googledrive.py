@@ -6,12 +6,14 @@ Creator: Nathan Palmer
 
 from fileservice import fileServiceInterface
 from cazobjects import CazFile
+from cazscan import search_content, create_temp_name
 import logging
 logger = logging.getLogger(__name__)
 
 import httplib2
 import os
 from apiclient import discovery
+from apiclient.http import MediaIoBaseDownload
 from oauth2client import tools
 from oauth2client.file import Storage
 from oauth2client.client import AccessTokenRefreshError
@@ -21,7 +23,7 @@ from oauth2client.client import OAuth2WebServerFlow
 class googledriveHandler(fileServiceInterface):
     """Google Drive cloud service handler."""
 
-    SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
+    SCOPES = 'https://www.googleapis.com/auth/drive.readonly'
     FOLDER_MIME = "application/vnd.google-apps.folder"
 
     class oauth_flags(object):
@@ -82,7 +84,7 @@ class googledriveHandler(fileServiceInterface):
     def _run_file_search_query(self,
                                query,
                                item_check,
-                               fields="nextPageToken, files(id, name, kind, mimeType, md5Checksum, parents)"):
+                               fields="nextPageToken, files(id, name, kind, mimeType, md5Checksum, parents, shared)"):
         nextPage = ""
         try:
             nextPage = ""
@@ -171,7 +173,47 @@ class googledriveHandler(fileServiceInterface):
         Args:
             expressions (CazRegExp[]) List of regular expressions for content comparison
         """
-        raise NotImplementedError
+        matches = []
+
+        def scan_item_contents(item):
+            if item.get('mimType') == self.FOLDER_MIME:
+                return
+
+            shared = item.get('shared', None)
+            if shared is None or shared:
+                return
+            # only process files
+            file_id = item.get('id', None)
+            name = item.get('name', None)
+            available = True
+            if file_id and name:
+                f_path = create_temp_name(temp_dir, name)
+                logger.warning("Processing file {}...{}".format(name, f_path))
+                f = open(f_path, 'wb')
+                try:
+                    request = self.client.files().get_media(fileId=file_id)
+                    downloader = MediaIoBaseDownload(f, request)
+                    done = False
+                    while done is False:
+                        status, done = downloader.next_chunk()
+                except Exception as ex:
+                    logger.error("Unable to download file {}. {}".format(name, ex))
+                    available = False
+                f.close()
+                if available:
+                    try:
+                        matches.extend(search_content(f_path, expressions))
+                    except Exception as ex:
+                        logger.error("Unable to parse content in file {}. {}".format(name, ex))
+
+                try:
+                    os.remove(f_path)
+                except Exception as ex:
+                    logger.error("Unable to clean up temprary file {}. {}".format(f_path, ex))
+
+        self._run_file_search_query("", scan_item_contents)
+
+        return matches
 
     def get_file(self, name=None, md5=None, sha1=None):
         """Get a file from Google Drive using the name or hashes."""
