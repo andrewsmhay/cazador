@@ -20,7 +20,7 @@ Note: This tool was developed using Python 3.5.x and will likely not work with 2
 Use Git or checkout with SVN using the web URL to install cazador:
 
 ```
-$ git clone https://github.com/DataGravityInc/cazador.git
+$ git clone https://github.com/andrewsmhay/cazador.git
 ```
 
 ### Additional Libraries
@@ -93,8 +93,8 @@ Known services:
 ```
 
 ## Authors and Contributors
-* Nathan Palmer, DataGravity, Inc. <a href="https://twitter.com/napalmer7">@napalmer7</a>
-* Andrew Hay, DataGravity, Inc., <a href="https://twitter.com/andrewsmhay">@andrewsmhay</a>
+* Nathan Palmer, <a href="https://twitter.com/napalmer7">@napalmer7</a>
+* Andrew Hay, <a href="https://twitter.com/andrewsmhay">@andrewsmhay</a>
 
 ## Support
 
@@ -104,7 +104,7 @@ Please submit all issues, questions, and feature requests using GitHub's _Issues
 
 The MIT License (MIT)
 
-Copyright (c) 2016 DataGravity, Inc.
+Copyright (c) 2017 Nathan Palmer and Andrew Hay.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
