@@ -82,7 +82,10 @@ cazador.py -c <Config file> -s <Service Type>
     -s, --service= Cloud/File service type to search through.
                   !!! This must have a matching segment in the configuration document
     -c, --config= <Optional> File path to the configuration document for file/cloud service.
-                  Default: [Current Directory]/cloud.conf""")
+                  Default: [Current Directory]/cloud.conf
+    -f, --filename= <Optional> Name of the file to search within the file/cloud service.
+    -m, --md5= <Optional> MD5 hash of the file to search within the file/cloud service.
+    -a, --sha1= <Optional> SHA1 of the file to search within the file/cloud service.""")
     print_known_services()
 
 
@@ -145,11 +148,15 @@ if __name__ == "__main__":
 
     try:
         opts, args = getopt.getopt(argv,
-                                   "hc:s:",
-                                   ["config=", "service="])
+                                   "hc:s:f:m:a:",
+                                   ["config=", "service=", "filename=", "md5=", "sha1="])
     except getopt.GetoptError:
         print_help()
         sys.exit(2)
+
+    filename = None
+    md5 = None
+    sha1 = None
 
     config_path = "cloud.conf"
     for opt, arg in opts:
@@ -160,6 +167,12 @@ if __name__ == "__main__":
             service_type = arg
         elif opt in ("-c", "--config"):
             config_path = arg
+        elif opt in ("-f", "--file"):
+            filename = arg
+        elif opt in ("-m", "--md5"):
+            md5 = arg
+        elif opt in ("-a", "--sha1"):
+            sha1 = arg
 
     if not service_type:
         logger.error("Unable to complete operation. No valid service type was specified.")
@@ -187,10 +200,39 @@ if __name__ == "__main__":
         temp_dir = os.path.dirname(__file__)
 
     # TODO REMOVE THIS TEST CODE
+    """
     test_find = True
     if test_find:
         test_find_file(service)
         logger.info("")
+    """
+
+    try:
+        if filename:
+            matches = service.find_file(name=filename)
+            print("Found {} filename matches".format(len(matches)))
+            for x in matches:
+                print(x)
+    except Exception as ex:
+        print("Unexpected error finding file {} by name. {}".format(filename, ex))
+
+    try:
+        if md5:
+            matches = service.find_file(md5=md5)
+            print("Found {} MD5 matches".format(len(matches)))
+            for x in matches:
+                print(x)
+    except Exception as ex:
+        print("Unexpected error finding file {} by MD5. {}".format(filename, ex))
+
+    try:
+        if sha1:
+            matches = service.find_file(sha1=sha1)
+            print("Found {} SHA1 matches".format(len(matches)))
+            for x in matches:
+                print(x)
+    except Exception as ex:
+        print("Unexpected error finding file {} by sha1. {}".format(filename, ex))
 
     if len(regex_exps) > 0:
         logger.debug("Starting scan...")

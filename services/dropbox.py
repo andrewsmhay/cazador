@@ -68,6 +68,7 @@ class dropboxHandler(fileServiceInterface):
             raise ValueError("Dropbox does not support hash only searching.")
 
         matches = []
+        # TODO: https://www.dropbox.com/developers/reference/content-hash
         for f in self.folders:
             start = 0
             while True:

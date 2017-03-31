@@ -1,4 +1,4 @@
-dg_cloud.conf
+test_cloud.conf
 *.pyc
 *.log.[0-9]*
 *.log*
