@@ -1,7 +1,7 @@
 apiclient==1.0.3
 boto3==1.4.0
 botocore==1.4.49
-bottle==0.12.9
+bottle==0.12.19
 boxsdk==1.5.3
 docutils==0.12
 dropbox==6.7.0
